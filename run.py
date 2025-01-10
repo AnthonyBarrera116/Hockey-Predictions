@@ -1,8 +1,11 @@
-import GetGame as g
-
 import SeasonScrapeGames as s
 
-seasons = s.SeasonScrapeGames()
+# 2007-2008 seasons to whatever
+seasons = s.SeasonScrapeGames(2007, 2026)
 
-seasons.seaosn_games(2024, 2025)
+# Scrapes the seasons
+seasons.scrape()
 
+# Season 2007 to 2008 1315
+# 2008 to 2009 1317 on 447 
+ 
