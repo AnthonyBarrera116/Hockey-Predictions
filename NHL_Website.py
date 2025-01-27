@@ -35,7 +35,7 @@ class NHL_Website():
 
 
 
-    def event_summary(self,link):
+    def event_summary(self,game_row,link):
 
         # Try to get resposne hopfully no 429 Error
         try:
@@ -119,74 +119,66 @@ class NHL_Website():
                     dictionary_teams[team_key] = pd.DataFrame(rows_data)
 
             for team_name, team_data in dictionary_teams.items():
+
+                column_names = ["#", "Position", "Player","G","A","P","+/-","PN","PIM","TOI","TOI_SHF","TOI_AVG","TOI_PP","TOI_SH","TOI_EV",
+                                "S","A/B","MS","HT","GV","TK","BS","FW","FL","F%"]
+            
+                game = team_data.copy()
+
+                if game_row["Game Type"] != "Playoff":
+
+                    regular_names = ["#", "Position", "Player"] + [f"Regular_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
+
+                    
+                    game = game.iloc[2:, :]
+                    game.columns = regular_names
+
+                    playoff_names = [f"Playoff_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
+
+                    for col in playoff_names:
+                            game[col] = 0
+
+
+                else:
+
+                    playoff_names = ["#", "Position", "Player"] + [f"Playoff_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
+                    
+                    game = game.iloc[2:, :]
+                    game.columns = playoff_names
+
+                    regular_names =  [f"Regular_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
+
+                    for col in regular_names:
+                            game[col] = 0
+
                 
+                totals_row = game.iloc[-1,:].copy()
+                game.iloc[-1] = totals_row.shift(periods=2)
 
-                holder = team_data.copy()
-
-                # Define column headers
-                header_part1 = list(holder.iloc[0, 1:7])
-                header_part2 = ["TOI", "# Shifts"] + ["TOI_" + str(value) for value in holder.iloc[1, 2:6]]
-                header_part3 = list(holder.iloc[0, 8:18])
-                columns = ["#", "Position", "Player"] + header_part1 + header_part2 + header_part3
-
-                # Subset data to exclude header rows and set the columns
-                holder = holder.iloc[2:, :]
-                holder.columns = columns
-
-                holder[['Last Name', 'First Name']] = holder['Player'].str.split(',', n=1, expand=True)
+                game[['Last Name', 'First Name']] = game['Player'].str.split(',', n=1, expand=True)
 
                 # Reorder columns
-                cols = ['#', 'Position', 'First Name', 'Last Name'] + [col for col in holder.columns if col not in ['#', 'Position', 'First Name', 'Last Name']]
-                holder = holder[cols].drop(columns=["Player"])
+                cols = ['#', 'Position', 'First Name', 'Last Name'] + [col for col in game.columns if col not in ['#', 'Position', 'First Name', 'Last Name']]
+                game = game[cols].drop(columns=["Player"])
 
-                holder = holder[holder["Last Name"] != "TEAM PENALTY"]
-
-
-                if "BG" in holder.columns:
-                    holder = holder.rename(columns={'BG': 'G'})
-                    holder = holder.rename(columns={'MINPIM': 'PIM'})
-                    holder = holder.rename(columns={'PUNPN': 'PN'})
-                    holder = holder.rename(columns={'TOI_MOYAVG':'TOI_AVG'})
-                    holder = holder.rename(columns={'TOI_AN/PP': 'TOI_PP'})
-                    holder = holder.rename(columns={'TOI_DN/SH': 'TOI_SH'})
-                    holder = holder.rename(columns={'TOI_FÉ/EV': 'TOI_EV'})
-                    holder = holder.rename(columns={'LANC.S': 'S'})
-                    holder = holder.rename(columns={'TENT/BLA/B': 'A/B'})
-                    holder = holder.rename(columns={'LRMS': 'MS'})
-                    holder = holder.rename(columns={'RGV': 'GV'})
-                    holder = holder.rename(columns={'MÉHT': 'HT'})
-                    holder = holder.rename(columns={'PPTK': 'TK'})
-                    holder = holder.rename(columns={'LBBS': 'BS'})
-                    holder = holder.rename(columns={'MGFW': 'FW'})
-                    holder = holder.rename(columns={'MPFL': 'FL'})
-                    holder = holder.rename(columns={'M%F%': 'F%'})
-
+                game = game[game["Last Name"] != "TEAM PENALTY"]
                 
+                game.loc[game.index[-1], 'Last Name'] = 'total'
 
-                # Adjust totals row
-                totals_row = holder.iloc[-1,:].copy()
-                
-
-                totals_row['First Name'] = totals_row['G']
-                
-
-                # Shift the row (move it to the desired position, assuming you want to add this as the last row)
-                
-                holder.iloc[-1] = totals_row.shift(periods=3)
-
-                
-                holder.loc[holder.index[-1], 'Last Name'] = ''
-
-                holder.loc[holder.index[-1], 'First Name'] = 'total'
+                game.loc[game.index[-1], 'First Name'] = 'total'
 
                 # Reset index and clean up names
-                holder.reset_index(drop=True, inplace=True)
-                holder['First Name'] = holder['First Name'].fillna("").str.lower().apply(unidecode).str.strip()
-                holder['Last Name'] = holder['Last Name'].fillna("").str.lower().apply(unidecode).str.strip()
+                game.reset_index(drop=True, inplace=True)
+                game['First Name'] = game['First Name'].fillna("").str.lower().apply(unidecode).str.strip()
+                game['Last Name'] = game['Last Name'].fillna("").str.lower().apply(unidecode).str.strip()
 
+                game.replace("", np.nan, inplace=True)
+
+                # Replace NaN with 0
+                game.fillna(0, inplace=True)
 
                 # Update the processed DataFrame in the dictionary
-                dictionary_teams[team_name] = holder
+                dictionary_teams[team_name] = game
 
 
         return dictionary_teams
@@ -201,7 +193,7 @@ class NHL_Website():
         
         """
     
-    def game_summary(self,link):
+    def game_summary(self,game_row,link):
 
         # Send a GET request to fetch the HTML content
         response = requests.get(link)
@@ -227,8 +219,6 @@ class NHL_Website():
             # Check if the "GOALTENDER SUMMARY" section is found
             if goaltender_summary_section:
 
-                
-
                 # Find the next <table> element after the "GOALTENDER SUMMARY" text
                 goalie_table = goaltender_summary_section.find_next('table')
 
@@ -239,7 +229,6 @@ class NHL_Website():
                     table_data = []
 
                     insert = "Away"
-
                     # Loop through each row and extract text for each cell
                     for row in rows:
                         cells = row.find_all('td')
@@ -254,7 +243,14 @@ class NHL_Website():
                                     table_data.append(row_data)
 
                             else:
-                                goalie_dictionary[insert] = pd.DataFrame(table_data)
+                                
+                                team_data = pd.DataFrame(table_data)
+                                team_data.replace("", np.nan, inplace=True)
+
+                                # Replace NaN with 0
+                                team_data.fillna(0, inplace=True)
+
+                                goalie_dictionary[insert] = team_data
                                 table_data = []
                                 insert = "Home"
 
@@ -264,49 +260,63 @@ class NHL_Website():
                     # Check if we have any rows to create a DataFrame
                     for team_name, team_data in goalie_dictionary.items():
 
-                        header_part2 =["TOI_" + str(value) for value in team_data.iloc[1, 0:3]] + ["TOI"]  + [str(value) for value in team_data.iloc[1, 4:-3]] # Columns from row 1, positions 7 to 11
-                                
+                        game = team_data.copy()
                         
-                        # Combine all parts of the column headers
-                        columns = ["#", "Position", "Player"]  + header_part2 
+                        column_names = ["#", "Position", "Player", "TOI_EV", "TOI_PP", "TOI_SH", "TOI"] + list(game.columns[7:])
+
+                        if game_row["Game Type"] != "Playoff":
+
+                            regular_names = ["#", "Position", "Player"] + [f"Regular_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
+
+                            game = game.iloc[2:, :]
+                            game.columns = regular_names
+
+                            playoff_names = [f"Playoff_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
+
+                            for col in playoff_names:
+                                    game[col] = 0
 
 
-                        team_data.columns = columns
+                        else:
 
-                        if "TOI_FÉ/EV" in team_data.columns:
-                            team_data = team_data.rename(columns={'TOI_AN/PP': 'TOI_PP'})
-                            team_data = team_data.rename(columns={'TOI_DN/SH': 'TOI_SH'})
-                            team_data = team_data.rename(columns={'TOI_FÉ/EV': 'TOI_EV'})
+                            playoff_names = ["#", "Position", "Player"] + [f"Playoff_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
 
-                        team_data = team_data.iloc[2:-1,:7]
+                            game = game.iloc[2:, :]
+                            game.columns = playoff_names
+
+                            regular_names = [f"Regular_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
+
+                            for col in regular_names:
+                                    game[col] = 0
+                                    
+                        game = game[["#", "Position", "Player", "Regular_TOI_EV", "Regular_TOI_PP", "Regular_TOI_SH", "Playoff_TOI_EV", "Playoff_TOI_PP", "Playoff_TOI_SH"]]
 
                         # Split 'Player' into 'First Name' and 'Last Name'
-                        team_data[['Last Name', 'First Name']] = team_data['Player'].str.split(',', n=1, expand=True)
+                        game[['Last Name', 'First Name']] = game['Player'].str.split(',', n=1, expand=True)
+
                         
+                        
+                        if game['First Name'].str.contains(r'\(', regex=True).any():
 
-                        team_data[['First Name', 'Dec']] = team_data['First Name'].str.split('(', n=1, expand=True)
-                        team_data['First Name'] = team_data['First Name'].str.strip()  # Remove trailing/leading whitespace
-                        team_data['Last Name'] = team_data['Last Name'].str.strip()  # Remove trailing/leading whitespace
+                            game[['First Name', 'Dec']] = game['First Name'].str.split('(', n=1, expand=True)
+
+                        else:
+                            game['Dec'] = 0
+
+                        game['First Name'] = game['First Name'].str.strip()  # Remove trailing/leading whitespace
+                        game['Last Name'] = game['Last Name'].str.strip()  # Remove trailing/leading whitespace
 
 
-
-                        cols = ['#','Position','First Name', 'Last Name'] + \
-                            [col for col in team_data.columns if col not in ['#','Position','First Name', 'Last Name']]
-
-                        # assigns columns to correct order
-                        team_data = team_data[cols]
-
-                        team_data = team_data.drop(columns=["Player","Dec"])
+                        game = game.drop(columns=["Player","Dec"])
 
                         
                         # issuse with names having some capials lettering in the name and unicode fro names with accent
-                        team_data['First Name'] = team_data['First Name'].fillna("").str.lower().apply(unidecode)
-                        team_data['Last Name'] = team_data['Last Name'].fillna("").str.lower().apply(unidecode)
+                        game['First Name'] = game['First Name'].fillna("").str.lower().apply(unidecode)
+                        game['Last Name'] = game['Last Name'].fillna("").str.lower().apply(unidecode)
 
-                        print(team_data)
-
-
-                        goalie_dictionary[team_name] = team_data
+                        game = game.iloc[:-1]
+                                
+                        goalie_dictionary[team_name] = game
 
 
         return goalie_dictionary
@@ -320,8 +330,7 @@ class NHL_Website():
         self.driver.get(url_game)
 
 
-
-        WebDriverWait(self.driver, 10).until(
+        WebDriverWait(self.driver, 3).until(
             EC.presence_of_element_located((By.CLASS_NAME, "sc-heKikV.choYvo"))
         )
 
@@ -333,29 +342,26 @@ class NHL_Website():
         # Find all `<a>` elements within the container
         links = container.find_elements(By.TAG_NAME, "a")
 
-        dictionary_teams = self.event_summary(links[1].get_attribute('href'))
 
-        print(dictionary_teams)
+        dictionary_teams = self.event_summary(row,links[1].get_attribute('href'))
 
         time.sleep(2)
 
-        goalies = self.game_summary(links[0].get_attribute('href'))
+        goalies = self.game_summary(row,links[0].get_attribute('href'))
 
+        goalies["Home"].index = dictionary_teams['Away'][(dictionary_teams['Away']['Last Name'].isin(goalies["Away"]['Last Name'])) &(dictionary_teams['Away']['First Name'].isin(goalies["Away"]['First Name']))].index
         
-        for i, goalie in goalies["Home"].iterrows():
-            if goalie["First Name"] in dictionary_teams["Home"]['First Name'].values:
-                dictionary_teams["Home"].loc[dictionary_teams["Home"]['First Name'] == goalie["First Name"], ['TOI_EV', 'TOI_PP', 'TOI_SH']] = goalie[['TOI_EV', 'TOI_PP', 'TOI_SH']].values
-
-        for i, goalie in goalies["Away"].iterrows():
-            if goalie["First Name"] in dictionary_teams["Away"]['First Name'].values:
-                dictionary_teams["Away"].loc[dictionary_teams["Away"]['First Name'] == goalie["First Name"], ['TOI_EV', 'TOI_PP', 'TOI_SH']] = goalie[['TOI_EV', 'TOI_PP', 'TOI_SH']].values
-
-
+    
+        dictionary_teams['Home'].update(goalies["Home"])
+      
+        goalies["Away"].index =dictionary_teams['Away'][(dictionary_teams['Away']['Last Name'].isin(goalies["Away"]['Last Name'])) &(dictionary_teams['Away']['First Name'].isin(goalies["Away"]['First Name']))].index
+        
+        dictionary_teams['Away'].update(goalies["Away"])
+        
         dictionary_teams['Home'].insert(4,"Player Team Abbr",row["Home Team Abbr"])
         dictionary_teams['Away'].insert(4,"Player Team Abbr",row["Visitor Team Abbr"])
         dictionary_teams['Home'].insert(4,"Player Team",row["Home Team"])
         dictionary_teams['Away'].insert(4,"Player Team",row["Visitor Team"])
-
         return dictionary_teams
 
     def get_specific_game(self,row):
@@ -369,14 +375,14 @@ class NHL_Website():
             try:
                 self.driver.get(self.url_scores + row["Date"])
 
-                WebDriverWait(self.driver, 2).until(
+                WebDriverWait(self.driver, 3).until(
                     EC.presence_of_element_located((By.CLASS_NAME, "sc-kRroQv"))
                 )
 
                 main_container = self.driver.find_element(By.CLASS_NAME, 'sc-kRroQv')
+
                 self.games = main_container.find_elements(By.CLASS_NAME, "sc-jtCqdw.ixZvh.game-card-container")
 
-                
             except TimeoutException as e:
                 print(f"Timeout error: {e}")
             except Exception as e:
@@ -389,17 +395,17 @@ class NHL_Website():
         
         try:
             
-
             for game_card in self.games:
+
                 try:
                     game_details = game_card.text.split('\n')
-                    
-                    if game_details[1] in row["Visitor Team"] and game_details[4] in row["Home Team"]:
+
+                    if any(word in row["Visitor Team"] for word in game_details) and any(word in row["Home Team"] for word in game_details):
+
                         gamecenter_link = game_card.find_element(By.PARTIAL_LINK_TEXT, "Gamecenter")
                         gamecenter_url = gamecenter_link.get_attribute('href')
                         gamecenter_url += "/summary"
-                        
-
+                        print(gamecenter_url)
                         dictionary_teams = self.get_summaries(gamecenter_url,row)
                         
                         break

@@ -19,29 +19,11 @@ class Season_Loop():
 
     """
     
-    Intilize variables and etc for websites might change
-
-    """
-    def __init__(self,min_y,max_y):
-        
-        # for making full URL of Game link of the game stats for games stats 
-        self.nhl_game_day = 'https://www.nhl.com/scores/'
-
-        # Range for year of pulling data
-        self.min_year = min_y
-        self.max_year = max_y
-
-        self.games_not_added = None
-
-        self.season_games = None
-
-    """
-    
     Checks if Season exists if does collect the last date 
     Used later to check for data in loaded data from Hockey Refrence to load rest or to move on
 
     """
-    def csv_checker(self,year):
+    def csv_checker_left_off(self,year,season_games):
 
         # File Path of where the csv season is being stored
         file_path = f"D:/HOCKEY DATA/Season {year} - {year + 1}.csv"
@@ -55,11 +37,20 @@ class Season_Loop():
             # obtains last game with data and teams so I can find the game and skip to next game
             left_off = df.iloc[-3][["Date", "Visitor Team", "Home Team"]]
 
+            left_off = pd.DataFrame([left_off])
+
+
+            row_index = season_games.loc[(season_games['Date'] == left_off['Date'].iloc[0]) 
+                & (season_games['Visitor Team'] == left_off['Visitor Team'].iloc[0]) 
+                & (season_games['Home Team'] == left_off['Home Team'].iloc[0])].index
+
+                # Get everything from that row onward
+            season_games = season_games.iloc[row_index[0] + 1:]
+
             # Make it a pandas df
-            return pd.DataFrame([left_off])
+        return season_games
         
-        # Else return nothing meaning season doesn't exist
-        return pd.DataFrame()
+    
 
     """
     
@@ -78,7 +69,6 @@ class Season_Loop():
             # Read the CSV file, ensuring that the first row contains column names
             df = pd.read_csv(file_path)
             
-
             # Make it a pandas df
             return pd.DataFrame(df)
         
@@ -91,10 +81,10 @@ class Season_Loop():
     Loops through from min year to max year obtasining season and games
 
     """
-    def year_looper(self):
+    def year_looper(self,min_year,max_year):
 
         # loops from min year season to max year season 
-        for year in range(self.min_year, self.max_year):
+        for year in range(min_year, max_year):
 
             # URL for games of season
             normal_url = f'https://www.hockey-reference.com/leagues/NHL_{year + 1}_games.html'
@@ -107,35 +97,27 @@ class Season_Loop():
 
             # Season import of Seasoon games
             season_functions = s.Get_Season()
-
-            # checks where game left off to get rest of data
-            self.games_not_added = self.csv_checker(year)
-
-            self.player_team_data = self.csv_player_data(year)
             
             # Gets all games for season and playoffs
-            self.season_games = season_functions.load_season_games(normal_url)
+            season_games = season_functions.load_season_games(normal_url)
 
-            # Debugging      
-            #print(self.season_games)
+            # checks where game left off to get rest of data
+            season_games = self.csv_checker_left_off(year,season_games)
+
+            # Gets player stats if the file exist to allow continuation of adding stats from every game
+            season_player_team_data = self.csv_player_data(year)
 
             # make sure reqeusts are not to frequent or 429
             time.sleep(2)
 
-
-            if self.player_team_data.empty:
+            if season_player_team_data.empty:
                 # gets player data for the season
-                self.player_team_data = season_functions.load_player_data([players_url,goalie_url])
+                season_player_team_data = season_functions.load_player_data([players_url,goalie_url])
 
-            # Debugging
-            #print(self.season_games)
 
             # games import to obtain every game info indvidually 
-            games_function = games.Get_Games()
+            games_function = games.Get_Games(season_player_team_data,year,season_games)
 
             # loops through games
-            games_function.loop_games(year,self.season_games,self.games_not_added,self.player_team_data)
-
-            # Debugging
-            #print(self.player_age_team_data)
+            games_function.loop_games()
 

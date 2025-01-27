@@ -1,28 +1,36 @@
-# impor tLibraries
+# import Libraries
 import requests
 from bs4 import BeautifulSoup
 from urllib.parse import urljoin
 import pandas as pd
 from unidecode import unidecode
 import time
+
+
+"""
+obtain games and players from a seaosn from Hockey refrence it takes the year from year loop in Season loop
+
+"""
 class Get_Season():
 
+    """
+    intilize with main website to scrape with beatifual soup
+    """
     def __init__(self):
         self.hockey_refrence = 'https://www.hockey-reference.com'
 
 
     """
     
-    Loads player data with specific season
-    URL is the players on hockey refrence
+    Loads player and goalie data from player url and goalie url
     
     """
     def load_player_data(self,urls):
 
-        
         # Holder for appening all Players and converted later to Dataframe for later
         player_array_dictionary  = []
 
+        # Loads playe rthan goalie url
         for url in urls:
             
             # Response to URL Games
@@ -45,7 +53,6 @@ class Get_Season():
                 # obtains player, age and postion
                 name_tag = player_row.find('td', {'data-stat': 'name_display'})
                 age_tag = player_row.find('td', {'data-stat': 'age'})
-                team_tag = player_row.find('td', {'data-stat': 'team_name_abbr'})
 
                 # Makes sure a player has all three bc assigning from stirp will break
                 if name_tag and age_tag:
@@ -58,42 +65,16 @@ class Get_Season():
                         "First Name": unidecode(first_name.lower()) if name_tag else None,
                         "Last Name": unidecode(last_name.lower()) if name_tag else None,
                         "Age":  int(age_tag.text.strip()) if age_tag and age_tag.text.strip().isdigit() else None,
-                        "GP": 0,
-                        "G": 0,
-                        "A": 0,
-                        "P": 0,
-                        "+/-": 0,
-                        "PN": 0,
-                        "PIM":0,
-                        "EV": 0,
-                        "PP": 0,
-                        "SH":0,
-                        "GW": 0,
-                        "S%":0,
-                        "S": 0,
-                        "TOI_PP":0,
-                        "TOI_SH":0,
-                        "TOI_EV":0,
-                        "# Shifts": 0,
-                        "A/B":0,
-                        "MS":0,
-                        "TOI": 0,
-                        "TOI_AVG": 0,
-                        "FW": 0,
-                        "FL": 0,
-                        "F%": 0,
-                        "BS": 0,
-                        "HT": 0,
-                        "TK": 0,
-                        "GV": 0,
-                        "FL": 0,
-                        "Wins":0,
-                        "Losses": 0,
-                        "GA": 0,
-                        "SA": 0,
-                        "SV": 0,
-                        "SV%": 0,
-                        "SO": 0,
+                        "Regular_GP": 0,"Regular_G": 0,"Regular_A": 0,"Regular_P": 0,"Regular_+/-": 0,"Regular_PN": 0,"Regular_PIM":0,"Regular_EV": 0,
+                        "Regular_PP": 0,"Regular_SH":0,"Regular_GW": 0,"Regular_S%":0,"Regular_S": 0,"Regular_TOI_PP":0,"Regular_TOI_SH":0,"Regular_TOI_EV":0,
+                        "Regular_# Shifts": 0,"Regular_A/B":0,"Regular_MS":0,"Regular_TOI": 0,"Regular_TOI_AVG": 0,"Regular_FW": 0,
+                        "Regular_F%": 0,"Regular_BS": 0,"Regular_HT": 0,"Regular_TK": 0,"Regular_GV": 0,"Regular_FL": 0,"Regular_Wins":0,"Regular_Losses": 0,"Regular_OT_SO": 0,
+                        "Regular_GA": 0,"Regular_SA": 0,"Regular_SV": 0,"Regular_SV%": 0,"Regular_SO": 0,
+                        "Playoff_GP": 0,"Playoff_G": 0,"Playoff_A": 0,"Playoff_P": 0,"Playoff_+/-": 0,"Playoff_PN": 0,"Playoff_PIM":0,"Playoff_EV": 0,
+                        "Playoff_PP": 0,"Playoff_SH":0,"Playoff_GW": 0,"Playoff_S%":0,"Playoff_S": 0,"Regular_TOI_PP":0,"Playoff_TOI_SH":0,"Playoff_TOI_EV":0,
+                        "Playoff_# Shifts": 0,"Playoff_A/B":0,"Playoff_MS":0,"Playoff_TOI": 0,"Playoff_TOI_AVG": 0,"Playoff_FW": 0,"Playoff_FL": 0,
+                        "Playoff_F%": 0,"Playoff_BS": 0,"Playoff_HT": 0,"Playoff_TK": 0,"Playoff_GV": 0,"Playoff_FL": 0,"Playoff_Wins":0,"Playoff_Losses": 0,
+                        "Playoff_GA": 0,"Playoff_SA": 0,"Playoff_SV": 0,"Playoff_SV%": 0,"Playoff_SO": 0,
 
 
                     }
@@ -101,19 +82,20 @@ class Get_Season():
                     # Strips player info and appends to array
                     player_array_dictionary.append(player_data)
 
+            # slow down to not get 429 erro
             time.sleep(2)
 
         # Once all Players extracted sets to Player dataframe
         player_array_dictionary = pd.DataFrame( player_array_dictionary )
 
-        # drop dupilicates later issue where player has two stats for trading reason
+        # drop dupilicates of players where have two team stats
         player_array_dictionary = player_array_dictionary.drop_duplicates(subset=['First Name','Last Name'], keep='first')
 
+        # rest index
         player_array_dictionary = player_array_dictionary.reset_index(drop=True)
 
+        #assign index for later merging with data
         player_array_dictionary["index"] = player_array_dictionary.index
-            
-        #print(player_array_dictionary)
 
         # rtrune player data
         return player_array_dictionary
@@ -121,7 +103,7 @@ class Get_Season():
 
     """
     
-    Load season of games 
+    Load season of games for the specific year
     
     """
     def load_season_games(self,url):
@@ -130,6 +112,7 @@ class Get_Season():
         response = requests.get(url)
         response.encoding = 'utf-8'
 
+        # To allow debuggin error
         print("Load season",response)
 
 
@@ -191,9 +174,6 @@ class Get_Season():
                 
             # change for playoff type games
             game_type = "Playoff"
-
-        
-        #print(games_array_dictionary)
 
         # makes game tables to pandas
         return pd.DataFrame(games_array_dictionary)
