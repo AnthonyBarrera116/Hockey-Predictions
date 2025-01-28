@@ -2,11 +2,7 @@
 import requests
 from bs4 import BeautifulSoup
 import pandas as pd
-import numpy as np
 from unidecode import unidecode
-
-# Imports to nhl webiset to get roster game
-import NHL_Website as n
 
 
 
