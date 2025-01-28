@@ -13,3 +13,28 @@ NOTE: if you are running make sure to change file path
   - NHL_Website.py line 60
 
 To run just run the run.py file and everything will work
+
+
+Python Used:Python 3.8.18
+
+Libraires uses (PIP WAY):
+  - pip install WebDriver
+  - pip install pandas
+  - pip install numpy
+  - pip install BeautifulSoup
+  - pip install unidecode
+  - pip install time
+  - pip install requests
+  - pip install os
+  - pip install fuzzywuzzy
+    
+Libraires uses (CONDA WAY):
+  - conda install WebDriver
+  - conda install pandas
+  - conda install numpy
+  - conda install BeautifulSoup
+  - conda install unidecode
+  - conda install time
+  - conda install requests
+  - conda install os
+  - conda install fuzzywuzzy
