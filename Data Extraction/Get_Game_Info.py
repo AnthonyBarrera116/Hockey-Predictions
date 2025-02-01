@@ -41,50 +41,22 @@ class Get_Game_Info:
     fixes for playoff and normal games with the addition of first and last name
 
     """
-    def fix(self,df, col,selection,table_name,drop):
-            
-        # if games are regulations
-        if self.game_type != "Playoff":
-            
+    def fix(self,df, col,selection,table_name,drop,switch):
+
+        if switch == "P":
             # regulation game names
-            regular_names = ["Player"] + [f"{table_name}Regular_{col}" for col in col]
+            regular_names = ["Player"] + [f"{col}" for col in col]
 
-            # remove column names and selct certain data
-            df = df.iloc[drop:,selection]
-
-            # add column names regulation
-            df.columns = regular_names
-
-            # apply playoff columns with blank
-            playoff_names = [f"{table_name}Playoff_{col}" for col in col if col not in ['#', 'Position', 'Player']]
-
-            # applies names to columns
-            for col in playoff_names:
-
-                # add collumn with 0
-                df[col] = 0
-
-        # if games are playoffs
         else:
-            
-            # add playoffs game column names
-            playoff_names = ["Player"] + [f"{table_name}Playoff_{col}" for col in col]
-                
-            # remove column names and selct certain data
-            df = df.iloc[drop:,selection]
+            # regulation game names
+            regular_names = ["Player"] + [f"{table_name} {col}" for col in col]
 
-            # add column names regulation
-            df.columns = playoff_names
+        # remove column names and selct certain data
+        df = df.iloc[drop:,selection]
 
-            # apply Regulation columns with blank
-            regular_names = [f"{table_name}Regular_{col}" for col in col if col not in ['#', 'Position', 'Player']]
+        # add column names regulation
+        df.columns = regular_names
 
-            # applies names to columns
-            for col in regular_names:
-
-                # add collumn with 0
-                df[col] = 0
-        
         # reset index
         df = df.reindex()
 
@@ -162,7 +134,7 @@ class Get_Game_Info:
                 if idx == 2 or idx == 4:
                         
                     # get certain vbalue of player for no duplicates later in merging
-                    df = self.fix(df,['EV','PP', 'SH', 'GW','# Shifts'],[1,7,8,9,10,12],"",2)
+                    df = self.fix(df,['EV','PP', 'SH', 'GW','S%'],[1,7,8,9,10,12],"",2,"P")
 
                     # makes last name total for merging later
                     df.at[df.index[-1], "Last Name"] = "total"
@@ -174,7 +146,7 @@ class Get_Game_Info:
                 elif idx == 3 or idx == 5:
 
                     # get certain vbalue of player for no duplicates later in merging
-                    df = self.fix(df,['DEC','GA', 'SA', 'SV','SV%','SO'],[1,2,3,4,5,6,7],"",2)
+                    df = self.fix(df,['DEC','GA', 'SA', 'SV','SV%','SO'],[1,2,3,4,5,6,7],"",2,"P")
                     
                     # Add to dictionary
                     dfs[table_title] = df
@@ -184,7 +156,7 @@ class Get_Game_Info:
                 elif idx > 5:
 
                     # get certain vbalue of player for no duplicates later in merging
-                    df = self.fix(df,['iCF','SAT‑F','SAT‑A','CF%','CRel%','ZSO','ZSD','oZS%','HIT','BLK'],[0,1,2,3,4,5,6,7,8,9,10],table_title.split()[1] + " ",1)
+                    df = self.fix(df,['iCF','SAT‑F','SAT‑A','CF%','CRel%','ZSO','ZSD','oZS%','HIT','BLK'],[0,1,2,3,4,5,6,7,8,9,10],table_title.split()[1],1,"")
 
                     # makes last name total for merging later
                     df.at[df.index[-1], "Last Name"] = "total"

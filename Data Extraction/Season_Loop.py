@@ -9,7 +9,7 @@ import Get_Games as games
 import pandas as pd
 import os
 import time
-
+import csv
 """
 
 loops through from min year to max year and call games and games info to obtain all the data
@@ -31,7 +31,7 @@ class Season_Loop():
         try:
 
             # File Path of where the csv season is being stored
-            file_path = f"D:/HOCKEY DATA/Season {year} - {year + 1}.csv"
+            file_path = f"C:/Users/ajbar/OneDrive/Hockey/Season {year} - {year + 1}.csv"
                 
             # Check if the file exists
             if os.path.exists(file_path):
@@ -39,25 +39,42 @@ class Season_Loop():
                 # debugging
                 print(f"\nFound existing file: {file_path}")
 
-                # Read the CSV file, ensuring that the first row contains column names
-                df = pd.read_csv(file_path)
+                try:
+
+                    # Read the CSV file, ensuring that the first row contains column names
+                    df = pd.read_csv(file_path)
+                    
+                    # obtains last game with data and teams so I can find the game and skip to next game
+                    left_off = df.iloc[-3][["Date", "Visitor Team", "Home Team"]]
+
+                    left_off = pd.DataFrame([left_off])
+
+
+                    row_index = season_games.loc[(season_games['Date'] == left_off['Date'].iloc[0]) 
+                        & (season_games['Visitor Team'] == left_off['Visitor Team'].iloc[0]) 
+                        & (season_games['Home Team'] == left_off['Home Team'].iloc[0])].index
+
+                        # Get everything from that row onward
+                    season_games = season_games.iloc[row_index[0] + 1:]
+
+                    # Make it a pandas df
+                    return season_games
                 
-                # obtains last game with data and teams so I can find the game and skip to next game
-                left_off = df.iloc[-3][["Date", "Visitor Team", "Home Team"]]
+                except pd.errors.ParserError as e:
+                        print(f"CSV parsing error: {e}")
+                        
+                        # Optional: Re-read CSV to identify problematic rows
+                        with open(file_path, "r", encoding="utf-8") as f:
+                            reader = csv.reader(f)
+                            for line_num, row in enumerate(reader, start=1):
+                                expected_fields = 462
+                                if len(row) != expected_fields:
+                                    print(f"Problematic row {line_num}: {row}")
 
-                left_off = pd.DataFrame([left_off])
-
-
-                row_index = season_games.loc[(season_games['Date'] == left_off['Date'].iloc[0]) 
-                    & (season_games['Visitor Team'] == left_off['Visitor Team'].iloc[0]) 
-                    & (season_games['Home Team'] == left_off['Home Team'].iloc[0])].index
-
-                    # Get everything from that row onward
-                season_games = season_games.iloc[row_index[0] + 1:]
-
-                # Make it a pandas df
-            return season_games
-        
+            
+            else:
+                print(f"No file found for season {year} - {year + 1}.")
+                return season_games  # Return the original data unchanged
         # Debugging
         except pd.errors.ParserError as e:
 
@@ -84,7 +101,7 @@ class Season_Loop():
         try:
 
             # File Path of where the csv season is being stored
-            file_path = f"D:/HOCKEY DATA/Player Stats Season {year} - {year + 1}.csv"
+            file_path = f"C:/Users/ajbar/OneDrive/Hockey/Player Stats Season {year} - {year + 1}.csv"
                 
             # Check if the file exists
             if os.path.exists(file_path):
@@ -151,7 +168,7 @@ class Season_Loop():
                 season_player_team_data = self.csv_player_data(year)
 
                 # make sure reqeusts are not to frequent or 429
-                time.sleep(2)
+                time.sleep(5)
 
                 if season_player_team_data.empty:
                     # gets player data for the season

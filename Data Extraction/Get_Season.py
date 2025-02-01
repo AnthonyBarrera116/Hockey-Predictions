@@ -71,17 +71,19 @@ class Get_Season():
                             "First Name": unidecode(first_name.lower()) if name_tag else None,
                             "Last Name": unidecode(last_name.lower()) if name_tag else None,
                             "Age":  int(age_tag.text.strip()) if age_tag and age_tag.text.strip().isdigit() else None,
-                            "Regular_GP": 0,"Regular_G": 0,"Regular_A": 0,"Regular_P": 0,"Regular_+/-": 0,"Regular_PN": 0,"Regular_PIM":0,"Regular_EV": 0,
-                            "Regular_PP": 0,"Regular_SH":0,"Regular_GW": 0,"Regular_S%":0,"Regular_S": 0,"Regular_TOI_PP":0,"Regular_TOI_SH":0,"Regular_TOI_EV":0,
-                            "Regular_# Shifts": 0,"Regular_A/B":0,"Regular_MS":0,"Regular_TOI": 0,"Regular_TOI_AVG": 0,"Regular_FW": 0,
-                            "Regular_F%": 0,"Regular_BS": 0,"Regular_HT": 0,"Regular_TK": 0,"Regular_GV": 0,"Regular_FL": 0,"Regular_Wins":0,"Regular_Losses": 0,"Regular_OT_SO": 0,
-                            "Regular_GA": 0,"Regular_SA": 0,"Regular_SV": 0,"Regular_SV%": 0,"Regular_SO": 0,
-                            "Playoff_GP": 0,"Playoff_G": 0,"Playoff_A": 0,"Playoff_P": 0,"Playoff_+/-": 0,"Playoff_PN": 0,"Playoff_PIM":0,"Playoff_EV": 0,
-                            "Playoff_PP": 0,"Playoff_SH":0,"Playoff_GW": 0,"Playoff_S%":0,"Playoff_S": 0,"Regular_TOI_PP":0,"Playoff_TOI_SH":0,"Playoff_TOI_EV":0,
-                            "Playoff_# Shifts": 0,"Playoff_A/B":0,"Playoff_MS":0,"Playoff_TOI": 0,"Playoff_TOI_AVG": 0,"Playoff_FW": 0,"Playoff_FL": 0,
-                            "Playoff_F%": 0,"Playoff_BS": 0,"Playoff_HT": 0,"Playoff_TK": 0,"Playoff_GV": 0,"Playoff_FL": 0,"Playoff_Wins":0,"Playoff_Losses": 0,
-                            "Playoff_GA": 0,"Playoff_SA": 0,"Playoff_SV": 0,"Playoff_SV%": 0,"Playoff_SO": 0,
+                            "Regular_Game_stats_GP": 0,"Regular_Game_stats_G": 0,"Regular_Game_stats_A": 0,"Regular_Game_stats_P": 0,"Regular_Game_stats_+/-": 0,"Regular_Game_stats_PN": 0,
+                            "Regular_Game_stats_PIM":0,"Regular_Game_stats_EV": 0,"Regular_Game_stats_PP": 0,"Regular_Game_stats_SH":0,"Regular_Game_stats_GW": 0,"Regular_Game_stats_S%":0,"Regular_Game_stats_S": 0,
+                            "Regular_Game_stats_TOI_PP":0,"Regular_Game_stats_TOI_SH":0,"Regular_Game_stats_TOI_EV":0,"Regular_Game_stats_# Shifts": 0,"Regular_Game_stats_A/B":0,"Regular_Game_stats_MS":0,
+                            "Regular_Game_stats_TOI": 0,"Regular_Game_stats_TOI_AVG": 0,"Regular_Game_stats_FW": 0,"Regular_Game_stats_F%": 0,"Regular_Game_stats_BS": 0,"Regular_Game_stats_HT": 0,
+                            "Regular_Game_stats_TK": 0,"Regular_Game_stats_GV": 0,"Regular_Game_stats_FL": 0,"Regular_Game_stats_Wins":0,"Regular_Game_stats_Losses": 0,"Regular_Game_stats_OT_SO": 0,
+                            "Regular_Game_stats_GA": 0,"Regular_Game_stats_SA": 0,"Regular_Game_stats_SV": 0,"Regular_Game_stats_SV%": 0,"Regular_Game_stats_SO": 0,
 
+                            "Playoffs_Game_stats_GP": 0,"Playoffs_Game_stats_G": 0,"Playoffs_Game_stats_A": 0,"Playoffs_Game_stats_P": 0,"Playoffs_Game_stats_+/-": 0,"Playoffs_Game_stats_PN": 0,
+                            "Playoffs_Game_stats_PIM":0,"Playoffs_Game_stats_EV": 0,"Playoffs_Game_stats_PP": 0,"Playoffs_Game_stats_SH":0,"Playoffs_Game_stats_GW": 0,"Playoffs_Game_stats_S%":0,"Playoffs_Game_stats_S": 0,
+                            "Playoffs_Game_stats_TOI_PP":0,"Playoffs_Game_stats_TOI_SH":0,"Regular_Game_stats_TOI_EV":0,"Playoffs_Game_stats_# Shifts": 0,"Playoffs_Game_stats_A/B":0,"Playoffs_Game_stats_MS":0,
+                            "Playoffs_Game_stats_TOI": 0,"Playoffs_Game_stats_TOI_AVG": 0,"Playoffs_Game_stats_FW": 0,"Playoffs_Game_stats_F%": 0,"Playoffs_Game_stats_BS": 0,"Playoffs_Game_stats_HT": 0,
+                            "Playoffs_Game_stats_TK": 0,"Playoffs_Game_stats_GV": 0,"Playoffs_Game_stats_FL": 0,"Playoffs_Game_stats_Wins":0,"Playoffs_Game_stats_Losses": 0,
+                            "Playoffs_Game_stats_GA": 0,"Playoffs_Game_stats_SA": 0,"Playoffs_Game_stats_SV": 0,"Playoffs_Game_stats_SV%": 0,"Playoffs_Game_stats_SO": 0,
 
                         }
 
@@ -89,7 +91,7 @@ class Get_Season():
                         player_array_dictionary.append(player_data)
 
                 # slow down to not get 429 erro
-                time.sleep(2)
+                time.sleep(5)
 
             # Once all Players extracted sets to Player dataframe
             player_array_dictionary = pd.DataFrame( player_array_dictionary )

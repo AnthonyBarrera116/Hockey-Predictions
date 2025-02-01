@@ -56,8 +56,8 @@ class NHL_Website():
     """
     def start_up(self):
 
-        # Driver Path
-        chromedriver_path = r"C:\HOCKEY\Data Extraction\Chrome Web Driver\chromedriver.exe"
+        # Driver Path FOR LAPTOP
+        chromedriver_path = r"C:\Coding Projects\CODING HOCKEY\Data Extraction\Chrome Web Driver\chromedriver.exe"
 
         # Services for chrome path
         service = Service(chromedriver_path)
@@ -112,7 +112,7 @@ class NHL_Website():
     TOT=Tota
 
     """
-    def event_summary(self,game_row,link):
+    def event_summary(self,link):
 
         # Try to get resposne hopfully no 429 Error
         try:
@@ -192,54 +192,22 @@ class NHL_Website():
             # loops through home and away and adds correcty columns names data
             for team_name, team_data in dictionary_teams.items():
 
-                # column names
+                # column names TOI SHF = # shifts
                 column_names = ["#", "Position", "Player","G","A","P","+/-","PN","PIM","TOI","TOI_SHF","TOI_AVG","TOI_PP","TOI_SH","TOI_EV",
                                     "S","A/B","MS","HT","GV","TK","BS","FW","FL","F%"]
                 
                 # copy
                 game = team_data.copy()
 
-                # if games are regulations
-                if game_row["Game Type"] != "Playoff":
 
-                    # regulation game names
-                    regular_names = ["#", "Position", "Player"] + [f"Regular_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
+                # regulation game names
+                regular_names = ["#", "Position", "Player"] + [f"{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
 
-                    # remove top two rows since they column names
-                    game = game.iloc[2:, :]
+                # remove top two rows since they column names
+                game = game.iloc[2:, :]
                     
-                    # add column names regulation
-                    game.columns = regular_names
-
-                    # apply playoff columns with blank
-                    playoff_names = [f"Playoff_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
-
-                    # applies names to columns
-                    for col in playoff_names:
-
-                        # add collumn with 0
-                        game[col] = 0
-
-                # if playoff game
-                else:
-
-                    # add playoffs game column names
-                    playoff_names = ["#", "Position", "Player"] + [f"Playoff_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
-                        
-                    # remove top two rows since they column names
-                    game = game.iloc[2:, :]
-
-                   # add column names
-                    game.columns = playoff_names
-
-                    # apply Regulation columns with blank
-                    regular_names =  [f"Regular_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
-
-                    # applies names to columns
-                    for col in regular_names:
-
-                        # add collumn with 0
-                        game[col] = 0
+                # add column names regulation
+                game.columns = regular_names
 
                 # remove RK
                 totals_row = game.iloc[-1,:].copy()
@@ -311,7 +279,7 @@ class NHL_Website():
     Game Summary is for golaie stats home and away 
 
     """
-    def game_summary(self,game_row,link):
+    def game_summary(self,link):
 
         # Debugging
         try:
@@ -399,54 +367,18 @@ class NHL_Website():
                         # copy
                         game = team_data.copy()
 
+                        game = game.iloc[2:-1]
+
+                        
+
                         # column names
                         column_names = ["#", "Position", "Player", "TOI_EV", "TOI_PP", "TOI_SH", "TOI"] + list(game.columns[7:])
 
-                        # if games are regulations
-                        if game_row["Game Type"] != "Playoff":
-
-                            # regulation game names
-                            regular_names = ["#", "Position", "Player"] + [f"Regular_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
-
-                            # remove top two rows since they column names
-                            game = game.iloc[2:, :]
-
-                            # add column names regulation
-                            game.columns = regular_names
-
-                            # apply playoff columns with blank
-                            playoff_names = [f"Playoff_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
-
-                                
-                            # applies names to columns
-                            for col in playoff_names:
-
-                                # add collumn with 0
-                                game[col] = 0
-
-                        # if games are playoffs
-                        else:
-                            
-                            # add playoffs game column names
-                            playoff_names = ["#", "Position", "Player"] + [f"Playoff_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
-
-                            # remove top two rows since they column names
-                            game = game.iloc[2:, :]
-
-                            # add column names
-                            game.columns = playoff_names
-
-                            # apply Regulation columns with blank
-                            regular_names = [f"Regular_{col}" for col in column_names if col not in ['#', 'Position', 'Player']]
-
-                            # applies names to columns
-                            for col in regular_names:
-
-                                # add collumn with 0
-                                game[col] = 0
+                        # add column names regulation
+                        game.columns = column_names
                         
                         # order and only what is important
-                        game = game[["#", "Position", "Player", "Regular_TOI_EV", "Regular_TOI_PP", "Regular_TOI_SH", "Playoff_TOI_EV", "Playoff_TOI_PP", "Playoff_TOI_SH"]]
+                        game = game[["#", "Position", "Player", "TOI_EV", "TOI_PP", "TOI_SH",'TOI']]
 
                         # Split 'Player' into 'First Name' and 'Last Name'
                         game[['Last Name', 'First Name']] = game['Player'].str.split(',', n=1, expand=True)
@@ -473,9 +405,6 @@ class NHL_Website():
                         game['First Name'] = game['First Name'].fillna("").str.lower().apply(unidecode)
                         game['Last Name'] = game['Last Name'].fillna("").str.lower().apply(unidecode)
 
-                        # remove total row
-                        game = game.iloc[:-1]
-                            
                         # make sure "" are NAN
                         team_data.replace("", np.nan, inplace=True)
 
@@ -484,6 +413,7 @@ class NHL_Website():
 
                         # add to dictonary home/away                                    
                         goalie_dictionary[team_name] = game
+
 
             # return home and away dictionary
             return goalie_dictionary
@@ -536,26 +466,28 @@ class NHL_Website():
             links = container.find_elements(By.TAG_NAME, "a")
 
             # get even summary link and send to function
-            dictionary_teams = self.event_summary(row,links[1].get_attribute('href'))
+            dictionary_teams = self.event_summary(links[1].get_attribute('href'))
 
             # no 429 error
-            time.sleep(2)
+            time.sleep(5)
 
             # get game summary link and send to function
-            goalies = self.game_summary(row,links[0].get_attribute('href'))
+            goalies = self.game_summary(links[0].get_attribute('href'))
 
             # update index of goalies for df update function
             goalies["Home"].index = dictionary_teams['Away'][(dictionary_teams['Away']['Last Name'].isin(goalies["Away"]['Last Name'])) &(dictionary_teams['Away']['First Name'].isin(goalies["Away"]['First Name']))].index
             
             # update goales/add values
             dictionary_teams['Home'].update(goalies["Home"])
+
+            
         
             # update index of goalies for df update function
             goalies["Away"].index =dictionary_teams['Away'][(dictionary_teams['Away']['Last Name'].isin(goalies["Away"]['Last Name'])) &(dictionary_teams['Away']['First Name'].isin(goalies["Away"]['First Name']))].index
             
             # update goales/add values
             dictionary_teams['Away'].update(goalies["Away"])
-            
+
             # add player teams to home and away and Abbr
             dictionary_teams['Home'].insert(4,"Player Team Abbr",row["Home Team Abbr"])
             dictionary_teams['Away'].insert(4,"Player Team Abbr",row["Visitor Team Abbr"])
@@ -665,7 +597,7 @@ class NHL_Website():
             # debugging
             print(f"NHL_Website for game_card in self.games error occurred: {e}")
 
-        # debugging
+        # 
         except Exception as e:
 
             # debugging
